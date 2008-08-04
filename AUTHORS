@@ -1,0 +1,16 @@
+Pcitop AUTHORS (and CONTRIBUTORS)
+ 
+Andrew Patterson <andrew.patterson@hp.com> 
+  - Maintainer.
+
+Rick Jones <rick.jones2@hp.com>
+  - Contributor
+
+Matthew Wilcox <matthew@wil.cx>
+  - Contributor
+
+Stephane Eranian 
+  - Wrote the original version of pcitop, then called "Mermon".
+
+Alex Chiang
+  - Coined the name "pcitop".

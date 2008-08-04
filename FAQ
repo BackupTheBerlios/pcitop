@@ -1,0 +1,14 @@
+                                Pcitop FAQ
+                                =============
+
+This is the pcitop FAQ.  Any suggestions/corrections/etc should be
+directed to andrew.patterson@hp.com.  The FAQ answers the following
+questions:
+
+    1) What platforms is pcitop supported on?
+
+
+  1) Pcitop is currently only supported on Linux on HP Itanium (IA-64)
+     platforms running a kernel version of 2.6.16 or later. We hope to add
+     more platforms later as vendors release the needed root bridge interface
+     specifications.

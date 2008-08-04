@@ -1,0 +1,10 @@
+Documentation:
+
+- Write man pages
+- HTML manual
+- ChangeLog
+
+Bugs:
+
+- Cannot obtain slot data for slots behind PCIe switch ports.
+

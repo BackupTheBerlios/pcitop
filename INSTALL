@@ -1,0 +1,31 @@
+This project uses both a user tool, pcitop, and a driver, hplba.  Both
+must be built. The driver must be built for the exact kernel you are
+running on.  The driver must be loaded before running pcitop along
+with one of either acpiphp or the pci_slot drivers. Pcimon will issue
+an error message if the appropriate drivers are not loaded.
+
+1. Make sure you have kernel source available for your kernel. A link
+to this source is assumed to be in "/lib/modules/`uname -r`/build".
+
+2. Unpack the source
+
+3. Run make
+
+   $ make
+
+4. Run make install as root
+
+   # make install
+
+5. Load the hplba driver.
+
+   # insmod drivers/hplba.ko
+
+6. Run the tool as root.
+
+   # pcitop -i # displays info about the PCI buses on the system.
+   # pcitop    # displays bus utilization
+
+
+
+

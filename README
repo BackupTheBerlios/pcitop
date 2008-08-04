@@ -1,0 +1,66 @@
+PCITOP
+
+The PCITOP package is used to monitor PCI bus utilization.  It pokes
+and prods counters in the root bridge chipsets found in a system,
+parses the data, and produces a display showing utilization as a
+percentage for each root bridge.  Note, that the tool does not show
+bandwidth, just the ratio of use to the maximum use possible.
+
+There are two components to the pcitop project, a driver called hplba,
+and a user tool called pcitop. The driver provides the pci utilization
+counters that the user land tool queries.  The driver exposes the
+counters using the sysfs file-system. The user tool reads and writes
+these sysfs entries to obtain a count of elapsed time and the time
+that the pci bus was in use (reading or writing data).  It then
+calculates a ratio of these values to get utilization. The pcitop tool
+then displays snapshots of utilization for each PCI bridge in the
+system.  The tool uses the acpiphp or pci_slot driver to map PCI slots
+to root bridges.
+
+Pcitop operates in two modes.  The first mode is used to present
+information about root bridges found in the system.  Here is an
+example:
+
+# pcitop -i
+
+0000:4a:00.0   PCI/66 MHz lba id = 0x122e rev=3.2 in use=n ropes=1 cabinet 0
+   bay 0 chassis 0 slots 8
+0000:49:00.0   PCI-X mode 1/66 MHz lba id = 0x122e rev=3.2 in use=y ropes=1 
+   cabinet n/a bay n/a chassis n/a slots n/a
+0000:0a:00.0   PCI/66 MHz lba id = 0x122e rev=3.2 in use=n ropes=2 cabinet 0 
+   bay 0 chassis 0 slots 7
+0000:01:00.0   PCI-X mode 1/66 MHz lba id = 0x122e rev=3.2 in use=y ropes=1
+    cabinet 0 bay 0 chassis 0 slots 10,9
+0000:00:00.0   PCI/66 MHz lba id = 0x122e rev=3.2 in use=y ropes=1 
+   cabinet n/a bay n/a chassis n/a slots n/a
+0000:c4:00.0   PCIe/x8 lba id = 0x4037 rev=2.2 in use=y ropes=4 
+   cabinet n/a bay n/a chassis n/a slots n/a
+0000:4f:00.0   PCIe/x8 lba id = 0x4037 rev=2.2 in use=y ropes=2 
+   cabinet n/a bay n/a chassis n/a slots n/a
+0000:0f:00.0   PCIe/x8 lba id = 0x4037 rev=2.2 in use=y ropes=4 
+   cabinet n/a bay n/a chassis n/a slots n/a
+
+The second mode is used to display bus utilization.  It measures
+utilization over a given interval and outputs the utilization for each
+root bridge.  Various filters can be applied to limit the number of
+root bridges displayed. Example:
+
+# pcitop
+-------------------------------------------------------------------------------
+bridge    0000:4a:00.0  0000:49:00.0  0000:0a:00.0  0000:01:00.0  0000:00:00.0
+type      PCI           PCI-X mode 1  PCI           PCI-X mode 1  PCI         
+speed     66 MHz        66 MHz        66 MHz        66 MHz        66 MHz     
+slots     8             n/a           7             10, 9         n/a        
+ropes     1             1             2             1             1          
+------------------------------------------------------------------------------
+          000.00%       003.11%       000.00%       000.01%       001.42%     
+          000.00%       003.06%       000.00%       000.00%       000.04%     
+          000.00%       002.97%       000.00%       000.00%       001.34%     
+          000.00%       002.85%       000.00%       000.00%       000.11%     
+          000.00%       003.05%       000.00%       000.00%       001.28%     
+
+PCI Utilization counters are very system specific. As such, a
+different driver must be used for each architecture.  Currently there
+is only one driver available, hplba, for Hewlett-Packard Itanium
+(IA-64) systems running Linux with kernel versions of 2.6.16 or later.
+
