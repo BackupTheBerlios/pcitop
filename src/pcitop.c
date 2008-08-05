@@ -73,7 +73,6 @@ typedef struct {
 	unsigned long	func_class;
 } chipset_regs_t;
 
-static const char *mapfile;
 static pcitop_options_t options;
 static struct lba_info *host_lba_list;
 static int time_to_quit;
@@ -208,8 +207,6 @@ static struct option pcitop_option_list[]={
 	{ "verbose", 0, &options.opt_verbose, 1 },
 	/* { "bus", 1, &options.opt_match_bus, -1 }, */
 	{ "debug", 0, &options.opt_debug, 1 },
-	{ "map", 1, 0, 5 },
-
 	{ 0, 0, 0, 0}
 };
 
@@ -218,18 +215,17 @@ void usage(const char *prg_name)
 	printf( "usage: %s [OPTIONS]\n", prg_name);
 	printf( "-h, -?, --help\t\tthis help message\n"
 		"-a\t\t\tlogically 'and' the display filters\n"
-		"-A chassis\t\tdisplay busses in chAssis\n"
-		"-B bay\t\t\tdisplay busses in Bay\n"
-		"-b bus\t\t\tdisplay busses matching bus\n"
-		"-C cabinet\t\tdisplay busses in Cabinet\n"
-		"-D domain\t\tdisplay busses in PCI Domain\n"
+		"-A chassis\t\tdisplay buses in chAssis\n"
+		"-B bay\t\t\tdisplay buses in Bay\n"
+		"-b bus\t\t\tdisplay buses matching bus\n"
+		"-C cabinet\t\tdisplay buses in Cabinet\n"
+		"-D domain\t\tdisplay buses in PCI Domain\n"
 		"-o\t\t\tlogically 'or' the display filters\n"
 		"-P lspci \t\tdisplay bus matching 'lspci-esque' pci address\n"
-		"-S slot\t\t\tdisplay busses matching slot number\n"
+		"-S slot\t\t\tdisplay buses matching slot number\n"
 		"-v,--verbose\t\tverbose mode\n"
 		"-V,--version\t\tprint version\n"
 		"-i,--info\t\tprint bus information only\n"
-		"-m,--map\t\tuse specified map file instead of ioctl\n"
 		"-t,--timeout\t\tset print interval in seconds [default 1s]\n"
 		"-c num\t\t\tnumber of samples [default 60]\n");
 }
@@ -1238,7 +1234,7 @@ int main(int argc, char **argv)
 	options.opt_match_slot = NULL;
 	
 	while ((c=getopt_long(argc, argv,
-			      "aA:b:B:C:D:hI:oP:S:vdVit:c:m:?", 
+			      "aA:b:B:C:D:hI:oP:S:vdVit:c:?", 
 			      pcitop_option_list, 0)) != -1) {
 		switch(c) {
 			case   0: continue; /* fast path for options */
@@ -1285,10 +1281,6 @@ int main(int argc, char **argv)
 			case 4:
 			case 'i':
 				options.opt_show_info = 1;
-				break;
-			case 5:
-			case 'm':
-				mapfile = optarg;
 				break;
 			case 'V': 
 			case   2:
