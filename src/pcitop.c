@@ -1188,7 +1188,10 @@ void measure_utilization(void)
 	p += sprintf(p, "%*s", -HEADER_WIDTH, " ");
 	for (lba = host_lba_list; lba; lba = lba->next) {
 		if (lba->display) {
-			util = (lba->counter * 100.0)/lba->timer;
+			if (lba->in_use)
+				util = (lba->counter * 100.0)/lba->timer;
+			else
+				util = 0.0;
 			col_width = COLUMN_DATA_WIDTH;
 			if (lba->next)
 				col_width += COLUMN_SEP_WIDTH;
