@@ -1,0 +1,399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+  <meta name="generator" content=
+  "HTML Tidy for Linux/x86 (vers 1st August 2004), see www.w3.org">
+
+  <title>Pcitop -- a PCI bus utilization monitoring tool</title>
+  <link rel="icon" href="images/pcitop-logo-favicon.ico" type="image/ico" />
+  <link rel="shortcut icon" href="images/pcitop-logo-favicon.ico" />
+</head>
+
+<body>
+  <script language="javascript" src="include/andrew-pcitop-email.js"></script>
+
+  <table style="text-align: left; width: 100%;" border="0"
+  cellpadding="10" cellspacing="2">
+    <tbody>
+      <tr>
+        <td>
+            <img src="images/pcitop-logo.gif" alt="Pcitop logo" align="left">
+            <h2>PCITOP -- a PCI bus utilization monitoring tool</h2>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+	  <table>
+            <tbody>
+	      <tr>
+                <td valign="top">
+	          <ul>
+                    <li><a href="#description">description</a></li>
+                    <li><a href="#features">features</a></li>
+                    <li><a href="#news">news</a></li>
+                    <li><a href="#download">download</a><br></li>
+                  </ul>
+                </td>
+                <td valign="top">
+	          <ul>
+                    <li><a href="#src">source archive</a><br></li>
+                    <li><a href="#screenshots">screenshots</a></li>
+                    <li><a href="#license">license</a></li>
+                  </ul>
+                </td>
+               <td valign="top">
+	          <ul>
+                    <li><a href="#lists">mailing lists</a></li>
+                    <li><a href="#forums">forums</a></li>
+                    <li><a href="#bugs">bug tracking</a></li>
+                    <li><a href="#requests">feature requests</a><br></li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+	  </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <a name="description" id="description"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Description</span><br>
+          <br>
+	  The PCITOP package is used to monitor PCI bus utilization.
+          It pokes and prods counters in the root bridge chipsets
+          found in a system, parses the data, and produces a display
+          showing utilization as a percentage for each root bridge.
+          Note that the tool does not show bandwidth, just the ratio
+          of use to the maximum use possible.
+	  <div style="text-align: right;">
+            --&nbsp; Andrew Patterson&lt;<script>decrypt_and_echo(0)</script>&gt;
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <a name="features" id="features"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Features</span><br>
+          <br>
+
+          <ul>
+            <li>Measures PCI, PCI-X, and PCIe bus utilization.</li>
+
+            <li>Sampling interval can be set by the user.</li>
+
+            <li>Filters can be used to only display specific buses, based
+	      on slots, PCI domains, and PCI bus numbers.</li>
+
+            <li>Outputs useful PCI bus information.</li>
+          </ul>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <a name="news" id="news"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">News</span><br>
+          <br>
+
+          <table style="text-align: left; width: 100%;" border="0"
+          cellpadding="2" cellspacing="10">
+            <tbody>
+
+              <tr>
+                <td style="vertical-align: top;">4-Aug-08</td>
+                <td style="vertical-align: top;">Pcitop 1.0.0 released.<br>
+		Almost completely rewritten from the original, HP proprietary 
+		version.<br>
+		Pcitop project hosted at Berlios.<br>
+		Project renamed to pcitop.
+		</td>
+              </tr>
+
+              <tr>
+                <td style="vertical-align: top;">2-Feb-08</td>
+                <td style="vertical-align: top;">mermon/pcimon 0.7<br>
+                License changed from HP proprietary to GNU Public
+                License (GPL) with permission from Hewlett-Packard.
+                Kudos to HP for supporting open source.<br>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <a name="download" id="download"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Download</span><br>
+          <br>
+
+          <table style="text-align: left; width: 100%;" border="0"
+          cellpadding="2" cellspacing="10">
+            <tbody>
+              <tr>
+                <td style="vertical-align: top;"><a href=
+                "ftp://ftp.berlios.de/pub/pcitop/1.0.0/index.html">pcitop-1.0.0</a><br>
+                </td>
+
+                <td style="vertical-align: top;">Initial public release.<br>
+                <td style="vertical-align: top;">stable<br></td>
+              </tr>
+ 
+            </tbody>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <a name="src" id="src"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Source
+          archive</span><br>
+          <br>
+
+	  Source for the pcitop project is stored in a <a
+	  href="http://git.or.cz/#documentation">git</a>
+	  repository. The project can be checked out using the
+	  following command:
+	  <br><br>
+	  For <strong>Read-only</strong> access: <br><br>
+          <code>
+	         &nbsp;&nbsp;&nbsp;git clone git://git.berlios.de/pcitop <br>
+		  </code>
+		 <br><br>
+		 For <strong>Read-Write</strong> access (project members): <br><br>
+		  <code>
+		     &nbsp;&nbsp;&nbsp;$ git clone ssh://loginname@git.berlios.de/gitroot/pcitop
+
+	  </code>
+          <br><br><br>
+
+	  Or, if you just want to browse the code, try the following links:
+
+          <table style="text-align: left; width: 100%;" border="0"
+          cellpadding="2" cellspacing="10">
+            <tbody>
+              <tr>
+                <td style="vertical-align: top;"><a href=
+                "http://git.berlios.de/cgi-bin/gitweb.cgi?p=pcitop;a=shortlog;h=refs/heads/master">master</a><br>
+                </td>
+		  <td style="vertical-align: top;">Top-of-tree</a><br>
+                </td>
+              </tr>
+              <tr>
+                <td style="vertical-align: top;"><a href=
+                "http://git.berlios.de/cgi-bin/gitweb.cgi?p=pcitop;a=summary/">1.0.0</a><br>
+                </td>
+                </td>
+		  <td style="vertical-align: top;">Latest release</a><br>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <a name="screenshots" id="screenshots"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Screenshots</span><br>
+          <br>
+
+          <table style="text-align: left;" border="0" cellpadding=
+          "2" cellspacing="15">
+            <tbody>
+              <tr>
+                <td colspan="3">--info output.</td>
+              </tr>
+
+              <tr>
+                <td style="vertical-align: top;"><a href=
+                "images/info.png"><img style=
+                "border: 0px solid" alt="--info output" src=
+                "images/info-thumbnail.png"></a><br></td>
+              </tr>
+
+              <tr>
+                <td colspan="3"><br>
+                Utilization output.</td>
+              </tr>
+
+              <tr>
+                <td style="vertical-align: top;"><a href=
+                "images/utilization.png"><img style=
+                "border: 0px solid" alt="utilization output" src=
+                "images/utilization-thumbnail.png"></a><br></td>
+              </tr>
+
+            </tbody>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <a name="license" id="license"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">License</span><br>
+          <br>
+          Copyright (C) 2007 Hewlett-Packard Corp.
+
+          <p>This program is free software; you can redistribute it
+          and/or modify it under the terms of the GNU General
+          Public License as published by the Free Software
+          Foundation version 2 of the License.</p>
+
+          <p>This program is distributed in the hope that it will
+          be useful, but WITHOUT ANY WARRANTY; without even the
+          implied warranty of MERCHANTABILITY or FITNESS FOR A
+          PARTICULAR PURPOSE. See the GNU General Public License
+          for more details.</p>
+
+          <p>You should have received a copy of the GNU General
+          Public License along with this program; if not, write to
+          the Free Software Foundation, Inc., 675 Mass Ave,
+          Cambridge, MA 02139, USA.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <a name="lists" id="lists"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Mailing lists</span><br>
+	  <br>
+	  There are three mailing lists for the Pcitop project: pcitop-changes,
+          pcitop-announce, and pcitop-devel.
+	  <br><br>
+	  <table cellspacing=15>
+	    <tbody>
+	      <tr>
+		<td>pcitop-changes</td>
+		<td>Source code commits are copied to this list.</td>
+		<td><a href="https://lists.berlios.de/mailman/listinfo/pcitop-changes">Subscribe</a>/<a href="https://lists.berlios.de/pipermail/pcitop-changes">Archive</td>
+	      </tr>
+	      <tr>
+		<td>pcitop-announce</td>
+		<td>Announcements of new releases and general news.</td>
+		<td><a href="https://lists.berlios.de/mailman/listinfo/pcitop-announce">Subscribe</a>/<a href="https://lists.berlios.de/pipermail/pcitop-announce">Archive</td>
+	      </tr>
+	      <tr>
+		<td>pcitop-devel</td>
+		<td>General development discussion.</td>
+		<td><a href="https://lists.berlios.de/mailman/listinfo/pcitop-devel">Subscribe</a>/<a href="https://lists.berlios.de/pipermail/pcitop-devel">Archive</td>
+	      </tr>
+	      </tbody>
+	  </table>
+      </tr>
+      <tr>
+        <td>
+          <a name="forums" id="forums"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Forums</span><br>
+	  <br>
+	  For more interactive discussion, you can try the
+	  Pcitop forums.
+          <br><br>
+	  <table cellspacing=15>
+	    <tbody>
+	      <tr>
+		<td>Open discussion</td>
+		<td>Anything related to the Pcitop project.</td>
+		<td><a href="http://developer.berlios.de/forum/forum.php?forum_id=7360">forum</a></td>
+	      </tr>
+	      <tr>
+		<td>Help</td>
+		<td>General help</td>
+		<td><a href="http://developer.berlios.de/forum/forum.php?forum_id=7361">forum</a></td>
+	      </tr>
+	    </tbody>
+	  </table>
+      </tr>
+      <tr>
+        <td>
+          <a name="bugs" id="bugs"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Bugs</span><br>
+	  <br>
+	  Found a bug in Pcitop?  Report it at <a href="http://developer.berlios.de/bugs/?group_id=2389">bugs</a>. Please check to see if the bug has already been reported before submitting a new one.
+	  </td>
+      </tr>
+      <tr>
+        <td>
+          <a name="requests" id="requests"></a>
+          <hr style="width: 100%; height: 2px;">
+          <span style="font-weight: bold;">Feature requests</span><br>
+	  <br>
+	  Want a new feature added to Pcitop?  Submit a feature request at <a href="http://developer.berlios.de/feature/?group_id=2389">feature requests</a>. Please check to see if the feature has already been submitted before placing a new one.
+	  </td>
+      </tr>
+    </tbody>
+  </table>
+  <hr>
+  <br>
+  <br>
+
+  <center>
+	The pcitop project is hosted by the kind people at:<br><br>
+    <a href="http://developer.berlios.de" title=
+    "BerliOS Developer"><img src=
+    "http://developer.berlios.de/bslogo.php?group_id=2389" width=
+    "124px" height="32px" border="0" alt=
+    "BerliOS Developer Logo"></a>
+  </center><br>
+  <br>
+  <!-- Created: Wed Aug 18 15:57:26 MDT 2004 -->
+  <!-- hhmts start -->
+Last modified: Tue Aug 21 21:56:27 MDT 2007
+<!-- hhmts end -->
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+</body>
+</html>
