@@ -48,6 +48,7 @@ install:
 
 dist:	clean
 	mkdir -p $(DIST_DIR)
-	cp -r $(DIST_FILES) $(DIST_DIR)
+	cp -a $(DIST_FILES) $(DIST_DIR)
 	tar -czof $(TARBALL) $(DIST_DIR)
+	-rm -rf $(DIST_DIR)
 
