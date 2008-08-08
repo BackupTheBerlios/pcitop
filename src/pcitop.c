@@ -1287,7 +1287,7 @@ int main(int argc, char **argv)
 				printf("%s version " PCITOP_VERSION " Date: "
 				       __DATE__ "\n"
 				       "Copyright (C) 2004-2008 "
-				       "Hewlett-Packard Company\n", prg_name);
+				       "Hewlett-Packard Co.\n", prg_name);
 				exit(0);
 			default:
 				fatal_error("");
