@@ -319,11 +319,20 @@ int hplba_stop(struct lba_info *lba)
 
 int hplba_collect(struct lba_info *lba)
 {
+	static char *utilization = 0;
+
 	int retval = 0;
 	unsigned long timer;
 	unsigned long counter;
 
-	char utilization[16 * 1024];
+	if (!utilization) {
+
+		utilization = calloc(1, sizeof(getpagesize()));
+		if (!utilization) {
+			error("%s cannot allocate memory\n");
+			goto out;
+		}
+	}
 
 	read_lba_attribute(lba, "utilization", utilization);
 	if (sscanf(utilization, "%lu,%lu", &timer, &counter) != 2) {
@@ -735,7 +744,7 @@ void filter_match_or(struct lba_info *lba)
 
 int read_attribute(const char *path, char *contents)
 {
-	static char *buf;
+	static char *buf = 0;
 
 	int fd;
 	int retval = 1;
