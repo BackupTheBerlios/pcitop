@@ -40,8 +40,6 @@ char *gemini_bus_op_mode(void *phys_addr)
 	int bus_op_mode = LBA_UNK_TYPE;
 	uint64_t bus_mode = LBA_REG(phys_addr, GEMINI_BUS_OP_MODE);
 
-	info("bus_mode = 0x%lx\n", LBA_REG(phys_addr, GEMINI_BUS_MODE));
-	info("bus_op_mode = 0x%lx\n", LBA_REG(phys_addr, GEMINI_BUS_OP_MODE));
 	switch (bus_mode) {
 	case 0:
 		bus_op_mode = LBA_PCI;
@@ -70,7 +68,6 @@ char *gemini_bus_speed(void *phys_addr)
 	int bus_speed = LBA_UNK_SPEED;
 	uint64_t pci_bus_mode = LBA_REG(phys_addr, GEMINI_BUS_OP_MODE);
 
-	info("bus_mode = %lu\n", pci_bus_mode);
 	switch (pci_bus_mode) {
 	case 0:
 		bus_speed = LBA_66MHZ;
