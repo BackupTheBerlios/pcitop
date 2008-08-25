@@ -324,16 +324,17 @@ int hplba_collect(struct lba_info *lba)
 	int retval = 0;
 	unsigned long timer;
 	unsigned long counter;
+	int page_size = getpagesize();
 
 	if (!utilization) {
-
-		utilization = calloc(1, sizeof(getpagesize()));
+		utilization = malloc(page_size);
 		if (!utilization) {
 			error("%s cannot allocate memory\n");
 			goto out;
 		}
 	}
 
+	memset(utilization, 0, page_size);
 	read_lba_attribute(lba, "utilization", utilization);
 	if (sscanf(utilization, "%lu,%lu", &timer, &counter) != 2) {
 		error("cannot parse utilization counter for %s\n", lba->name);
@@ -752,8 +753,7 @@ int read_attribute(const char *path, char *contents)
 	int page_size = getpagesize();
 	
 	if (!buf) {
-
-		buf = calloc(1, sizeof(getpagesize()));
+		buf = malloc(page_size);
 		if (!buf) {
 			error("%s cannot allocate memory\n");
 			goto out;
