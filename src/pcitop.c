@@ -55,10 +55,9 @@ const char SYSFS_SLOTS_DIR[] = "/sys/bus/pci/slots";
 const char SYSFS_DEV_DIR[] = "/sys/bus/pci/devices";
 
 /* display constants */
-#define COLUMN_DATA_WIDTH   12
 #define COLUMN_SEP_WIDTH     2
-#define MAX_COLUMNS	    10
-#define HEADER_WIDTH	    10
+#define HEADER_WIDTH	    14
+#define COLUMN_DATA_WIDTH   (COLUMN_SEP_WIDTH + HEADER_WIDTH)
 #define NUM_BANNER_ROWS	     7
 #define SCREEN_ROWS	    24
 #define UTIL_ROWS	    SCREEN_ROWS - NUM_BANNER_ROWS - 1
