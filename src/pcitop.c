@@ -56,14 +56,14 @@ const char SYSFS_DEV_DIR[] = "/sys/bus/pci/devices";
 
 /* display constants */
 #define COLUMN_SEP_WIDTH     2
-#define HEADER_WIDTH	    14
-#define COLUMN_DATA_WIDTH   (COLUMN_SEP_WIDTH + HEADER_WIDTH)
+#define COLUMN_HEADER_WIDTH  6
+#define COLUMN_DATA_WIDTH   16
 #define NUM_BANNER_ROWS	     7
 #define SCREEN_ROWS	    24
 #define UTIL_ROWS	    SCREEN_ROWS - NUM_BANNER_ROWS - 1
 
 #define LINE_WIDTH(lbas)				\
-	HEADER_WIDTH +					\
+	COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH +	\
 	((lbas) * COLUMN_DATA_WIDTH) +			\
 	(((lbas) - 1) * COLUMN_SEP_WIDTH)
 
@@ -1000,6 +1000,10 @@ char *build_banner(unsigned int num_lbas)
 	int col_width; 
 	char *banner, *p;
 
+	/*
+	 * Add space for a '\n' at the end of each row and a '\0' string
+	 * terminator at the end of the banner.
+	 */
 	banner = malloc(((LINE_WIDTH(num_lbas) + 1) * NUM_BANNER_ROWS) + 1);
 	if (!banner) {
 		error("could not allocate memory for banner\n");
@@ -1010,7 +1014,8 @@ char *build_banner(unsigned int num_lbas)
 		*p++ = '-';
 	}
 	*p++ = '\n';
-	p += sprintf(p, "%*s", -HEADER_WIDTH, "bridge");
+	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH),
+		     "bridge");
 	for (lba = host_lba_list; lba; lba = lba->next) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
@@ -1020,7 +1025,8 @@ char *build_banner(unsigned int num_lbas)
 		}
 	}
 	*p++ = '\n';
-	p += sprintf(p, "%*s", -HEADER_WIDTH, "type");
+	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH),
+		     "type");
 	for (lba = host_lba_list; lba; lba = lba->next) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
@@ -1030,7 +1036,8 @@ char *build_banner(unsigned int num_lbas)
 		}
 	}
 	*p++ = '\n';
-	p += sprintf(p, "%*s", -HEADER_WIDTH, "speed");
+	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH),
+		     "speed");
 	for (lba = host_lba_list; lba; lba = lba->next) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
@@ -1040,7 +1047,8 @@ char *build_banner(unsigned int num_lbas)
 		}
 	}
 	*p++ = '\n';
-	p += sprintf(p, "%*s", -HEADER_WIDTH, "slots");
+	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH),
+		"slots");
 	for (lba = host_lba_list; lba; lba = lba->next) {
 		if (lba->display) {
 			struct slot *slot = lba->slot;
@@ -1071,7 +1079,8 @@ char *build_banner(unsigned int num_lbas)
 		}
 	}
 	*p++ = '\n';
-	p += sprintf(p, "%*s", -HEADER_WIDTH, "ropes");
+	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH), 
+		     "ropes");
 	for (lba = host_lba_list; lba; lba = lba->next) {
 		if (lba->display) {
 			p += sprintf(p, "%*d", 
@@ -1154,7 +1163,8 @@ void measure_utilization(void)
 		 * account for header
 		 */
 		p = line_results;
-		p += sprintf(p, "%*s", -HEADER_WIDTH, " ");
+		p += sprintf(p, "%*s",
+			     -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH), " ");
 
 		/* 
 		 * process new counts
@@ -1189,7 +1199,7 @@ void measure_utilization(void)
 		       options.nsamples - nsamples);
 	puts(banner);
 	p = line_results;
-	p += sprintf(p, "%*s", -HEADER_WIDTH, " ");
+	p += sprintf(p, "%*s", -COLUMN_HEADER_WIDTH, " ");
 	for (lba = host_lba_list; lba; lba = lba->next) {
 		if (lba->display) {
 			if (lba->in_use)
