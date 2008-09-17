@@ -1,0 +1,21 @@
+#
+# Misc HP IA-64 (Itanium) drivers  
+#
+
+menu "Misc HP IA-64 (Itanium) devices"
+	depends on IA64_GENERIC || IA64_HP_ZX1
+
+config HPLBA
+	tristate "HP IA-64 Local Bus Adapter driver"
+	default m
+	---help---
+	 This option adds support for HP Itanium local bus adapters 
+	 (PCI-X/PCIe root bridge chipsets). It is used to, among other things,
+	 obtain access to PCI utilization statistics in these chipsets for
+	 tools like pcitop. It is not needed for normal PCI-X/PCIe support on 
+	 these systems.
+
+	 If you have an HP Itanium system and need this functionality, say Y.
+	 Otherwise say N.
+
+endmenu
