@@ -6,7 +6,8 @@
 *~
 *.tgz
 *.ko
-Modules.symvers
+Module.symvers
+modules.order
 *.mod.c
 *.cmd
 *.tmp_versions
