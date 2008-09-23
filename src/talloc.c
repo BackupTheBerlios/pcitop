@@ -1444,6 +1444,8 @@ void *talloc_realloc_fn(const void *context, void *ptr, size_t size)
 
 static int talloc_autofree_destructor(void *ptr)
 {
+	ptr = ptr; /* keep gcc from complaining about unused parameter */
+
 	autofree_context = NULL;
 	return 0;
 }
