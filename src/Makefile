@@ -11,12 +11,26 @@ PWD	:= $(shell pwd)
 
 DEBUG=-g -W -Wall
 #OPTIM=-O2
-CFLAGS=$(DEBUG) $(OPTIM) -I../drivers -D_GNU_SOURCE
+CPPFLAGS=-I../drivers -D_GNU_SOURCE
+CFLAGS=$(DEBUG)$(OPTIM) $(CPPFLAGS)
 LDFLAGS=-Wl,-E -ldl
+MAKEDEPEND=$(CC) -MM $(CPPFLAGS)
 
 prefix = /usr/local
 exec_prefix = ${prefix}
 bindir = ${exec_prefix}/bin
+
+SRCS := \
+	pcitop.c \
+	pci_sysfs.c \
+	list.c \
+	noerr.c \
+	string.c \
+	talloc.c
+
+SRCS := $(strip $(SRCS))
+
+OBJS := $(subst .c,.o,$(SRCS))
 
 all: $(TARGETS)
 
@@ -24,11 +38,18 @@ install: all
 	mkdir -p ${bindir}
 	cp -av ${PRODACRO} ${bindir}
 
-pcitop.o: pcitop.c pcitop.h
+%.o:	%.c
+	$(CC) -c $< $(CFLAGS)
+	$(MAKEDEPEND) -o $*.d $<
+	@cp $*.d $*.P; \
+	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	-e '/^$$/ d' -e 's/$$/ :/' < $*.d >> $*.P; \
+	rm -f $*.d
 
-pcitop: pcitop.c
-	$(CC) -o $@ pcitop.c $(CFLAGS) $(LDFLAGS)
+pcitop: $(OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
-	-rm -f *.o pcitop 
+	-rm -f *.o *.d *.P pcitop 
 
+-include $(SRCS:.c=.P)
