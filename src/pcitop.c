@@ -41,6 +41,7 @@
 
 #include "hplba.h"
 #include "pcitop.h"
+#include "string.h"
 
 #define PCITOP_VERSION "1.0.0"
 
@@ -641,7 +642,7 @@ int match_slot(struct lba_info *lba, const char *name)
 	struct slot *slot = lba->slot;
 
 	while (slot) {
-		if (strncmp(slot->name, name, ITANIUM_SLOT_NAME_SIZE) == 0)
+		if (strneq(slot->name, name, ITANIUM_SLOT_NAME_SIZE))
 			return 1;
 		slot = slot->next;
 	}
