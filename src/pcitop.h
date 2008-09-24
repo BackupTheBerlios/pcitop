@@ -22,6 +22,8 @@
 #ifndef __PCITOP_H__
 #define __PCITOP_H__
 
+#include "list.h"
+
 #define DEFAULT_DEBUG 1
 #ifdef DEFAULT_DEBUG
 #define DPRINT(a)						   \
@@ -79,7 +81,7 @@ struct slot {
 };
 
 struct lba_info {
-	struct lba_info *next;
+	struct list_node list;
 	const char *	name;
 	const struct lba_ops *ops;
 	unsigned long	prev_timer;	   /* old value */

@@ -42,6 +42,7 @@
 #include "hplba.h"
 #include "pcitop.h"
 #include "string.h"
+#include "list.h"
 
 #define PCITOP_VERSION "1.0.0"
 
@@ -74,9 +75,9 @@ typedef struct {
 } chipset_regs_t;
 
 static pcitop_options_t options;
-static struct lba_info *host_lba_list;
 static int time_to_quit;
 static char *prg_name;
+static LIST_HEAD(host_lba_list);
 
 struct bus_op_modes bus_op_modes_tab[]= {
 	{LBA_UNK_TYPE,"unknown"},
@@ -359,17 +360,13 @@ struct lba_ops hplba_ops = {
 
 struct lba_info *register_lba(const char *name)
 {
-	struct lba_info *new_lba, **tmp;
+	struct lba_info *new_lba;
 	new_lba = calloc(1, sizeof(*new_lba));
 	if (!new_lba)
 		fatal_error("cannot allocate memory for host local bus "
 			    "adapter\n");
 	new_lba->name = name;
-	for (tmp = &host_lba_list; 
-	     *tmp; 
-	     tmp = &(*tmp)->next)
-		;
-	*tmp = new_lba;
+	list_add_tail(&host_lba_list, &new_lba->list);
 	return new_lba;
 }
 
@@ -921,14 +918,13 @@ out:
 
 void filter_lbas(void)
 {
-	struct lba_info *lba = host_lba_list;
+	struct lba_info *lba;
 	
-	while (lba) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (options.opt_match_and)
 			filter_match_and(lba);
 		else
 			filter_match_or(lba);
-		lba = lba->next;
 	}
 }
 
@@ -968,7 +964,8 @@ void show_all_root_info(void)
 {
 	struct lba_info *lba;
 	struct slot *slot;
-	for (lba = host_lba_list; lba; lba = lba->next) {
+
+	list_for_each(&host_lba_list, lba, list) {
 		printf("%-14s %s/%s lba id = %#x rev=%s in use=%s ropes=%d "
 		       "cabinet %s bay %s chassis %s slots ",
 		       lba->name, lba->bus_type, lba->bus_speed,
@@ -1017,10 +1014,10 @@ char *build_banner(unsigned int num_lbas)
 	*p++ = '\n';
 	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH),
 		     "bridge");
-	for (lba = host_lba_list; lba; lba = lba->next) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
-			if (lba->next)
+			if (list_is_last(&host_lba_list, &lba->list))
 				col_width += COLUMN_SEP_WIDTH;
 			p += sprintf(p, "%*s", -col_width, lba->name);
 		}
@@ -1028,10 +1025,10 @@ char *build_banner(unsigned int num_lbas)
 	*p++ = '\n';
 	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH),
 		     "type");
-	for (lba = host_lba_list; lba; lba = lba->next) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
-			if (lba->next)
+			if (list_is_last(&host_lba_list, &lba->list))
 				col_width += COLUMN_SEP_WIDTH;
 			p += sprintf(p, "%*s", -col_width, lba->bus_type);
 		}
@@ -1039,10 +1036,10 @@ char *build_banner(unsigned int num_lbas)
 	*p++ = '\n';
 	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH),
 		     "speed");
-	for (lba = host_lba_list; lba; lba = lba->next) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
-			if (lba->next)
+			if (list_is_last(&host_lba_list, &lba->list))
 				col_width += COLUMN_SEP_WIDTH;
 			p += sprintf(p, "%*s", -col_width, lba->bus_speed);
 		}
@@ -1050,7 +1047,7 @@ char *build_banner(unsigned int num_lbas)
 	*p++ = '\n';
 	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH),
 		"slots");
-	for (lba = host_lba_list; lba; lba = lba->next) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			struct slot *slot = lba->slot;
 			int cnt = 0, tot_cnt = 0;
@@ -1074,7 +1071,7 @@ char *build_banner(unsigned int num_lbas)
 				p += sprintf(p, "%*s", 
 					     -COLUMN_DATA_WIDTH, "n/a");
 			}
-			if (lba->next)
+			if (list_is_last(&host_lba_list, &lba->list))
 				p += sprintf(p, "%*s", 
 					     COLUMN_SEP_WIDTH, " ");
 		}
@@ -1082,12 +1079,12 @@ char *build_banner(unsigned int num_lbas)
 	*p++ = '\n';
 	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH + COLUMN_SEP_WIDTH), 
 		     "ropes");
-	for (lba = host_lba_list; lba; lba = lba->next) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			p += sprintf(p, "%*d", 
 				     -COLUMN_DATA_WIDTH,
 				     lba->ropes);
-			if (lba->next)
+			if (list_is_last(&host_lba_list, &lba->list))
 				p += sprintf(p, "%*s", COLUMN_SEP_WIDTH, " ");
 		}
 	}
@@ -1122,12 +1119,12 @@ void measure_utilization(void)
 		fatal_error("could not allocate memory for line_results\n");
 
 	/* program counters */
-	for (lba = host_lba_list; lba; lba = lba->next) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display)
 			lba->ops->init(lba);
 	}
 
-	for (lba = host_lba_list; lba; lba = lba->next) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display)
 			lba->ops->reset(lba);
 	}
@@ -1136,7 +1133,7 @@ void measure_utilization(void)
 	     time_to_quit == 0 && nsamples;
 	     num_lines++, nsamples--) {
 
-		for (lba = host_lba_list; lba; lba = lba->next) {
+		list_for_each(&host_lba_list, lba, list) {
 			if (lba->display)
 				lba->ops->start(lba);
 		}
@@ -1146,12 +1143,12 @@ void measure_utilization(void)
 
 		mask_signals();
 
-		for (lba = host_lba_list; lba; lba = lba->next) {
+		list_for_each(&host_lba_list, lba, list) {
 			if (lba->display)
 				lba->ops->stop(lba);
 		}
 
-		for (lba = host_lba_list; lba; lba = lba->next) {
+		list_for_each(&host_lba_list, lba, list) {
 			if (lba->display)
 				lba->ops->collect(lba);
 		}
@@ -1170,7 +1167,7 @@ void measure_utilization(void)
 		/* 
 		 * process new counts
 		 */
-		for (lba = host_lba_list; lba; lba = lba->next) {
+		list_for_each(&host_lba_list, lba, list) {
 			if (lba->display) {
 				timer = lba->timer; 
 				counter = lba->counter; 
@@ -1183,7 +1180,7 @@ void measure_utilization(void)
 				lba->prev_timer = timer;
 				lba->prev_counter = counter;
 				col_width = COLUMN_DATA_WIDTH;
-				if (lba->next)
+				if (list_is_last(&host_lba_list, &lba->list))
 					col_width += COLUMN_SEP_WIDTH;
 				p += sprintf(p, "%06.2f%%%*s", 
 					     util, col_width - 7, " ");
@@ -1201,14 +1198,14 @@ void measure_utilization(void)
 	puts(banner);
 	p = line_results;
 	p += sprintf(p, "%*s", -COLUMN_HEADER_WIDTH, " ");
-	for (lba = host_lba_list; lba; lba = lba->next) {
+	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			if (lba->in_use)
 				util = (lba->counter * 100.0)/lba->timer;
 			else
 				util = 0.0;
 			col_width = COLUMN_DATA_WIDTH;
-			if (lba->next)
+			if (list_is_last(&host_lba_list, &lba->list))
 				col_width += COLUMN_SEP_WIDTH;
 			p += sprintf(p, "%06.2f%%%*s", 
 				     util, col_width - 7, " ");

@@ -191,6 +191,40 @@ static inline bool list_empty(struct list_head *h)
 }
 
 /**
+ * list_is_last - test whether @n is the last entry in list @h.
+ * @h: the list_head
+ * @n: the list_node to test
+ *
+ * If this is the last entry in the list, returns true.
+ *
+ * Example:
+ *	if (list_is_last(&parent->children, child))
+ *        printf("we are at the end\n");
+ */
+static inline bool list_is_last(struct list_head *h, struct list_node *n)
+{
+	(void)debug_list(h);
+	return n->next == &h->n;
+}
+
+/**
+ * list_is_first - test whether @n is the first entry in list @h.
+ * @h: the list_head
+ * @n: the list_node to test
+ *
+ * If this is the first entry in the list, returns true.
+ *
+ * Example:
+ *	if (list_is_first(&parent->children, child))
+ *        printf("we are at the beginning\n");
+ */
+static inline bool list_is_first(struct list_head *h, struct list_node *n)
+{
+	(void)debug_list(h);
+	return n->prev == &h->n;
+}
+
+/**
  * list_entry - convert a list_node back into the structure containing it.
  * @n: the list_node
  * @type: the type of the entry
