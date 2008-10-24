@@ -24,6 +24,7 @@
 
 #include "list.h"
 #include "pci_sysfs.h"
+#include "integrity.h"
 
 #define DEFAULT_DEBUG 1
 #ifdef DEFAULT_DEBUG
@@ -43,10 +44,6 @@
 
 #define REV_LEN 10
 #define SLOT_NAME_SIZE 20	/* from drivers/acpi/pci_slot.c */
-#define ITANIUM_CABINET_NAME_SIZE 2
-#define ITANIUM_CHASSIS_NAME_SIZE 2
-#define ITANIUM_BAY_NAME_SIZE 2
-#define ITANIUM_SLOT_NAME_SIZE 2
 
 typedef unsigned long long u64;
 
@@ -76,11 +73,6 @@ typedef struct {
 	int			timeout;
 } pcitop_options_t;
 
-struct slot {
-	struct slot *next;
-	char *name;
-};
-
 struct lba_info {
 	struct list_node list;
 	const char *	name;
@@ -98,9 +90,7 @@ struct lba_info {
 	struct pci_id pci_id;		   /* domain, bus, addr, func */
 	unsigned int in_use;		   /* any devices behind lba */
 	unsigned int display;		   /* do we want to see it or not */
-	char cabinet[ITANIUM_CABINET_NAME_SIZE];  /* the id of the cabinet W */
-	char chassis[ITANIUM_CHASSIS_NAME_SIZE];  /* the id of the chassis Y */
-	char bay[ITANIUM_BAY_NAME_SIZE];	  /* the id of the bay X */
+	struct integrity_lba_info arch_info;     /* specific to architecture */
 };
 
 struct lba_ops {

@@ -126,12 +126,6 @@ int hplba_collect(struct lba_info *lba);
 struct lba_info *register_lba(const char *name);
 int find_interface_in_dir(const char *dirname, const char *ifname);
 int find_interface(const char *ifname, char lspci[13]);
-int slot_add(struct lba_info *lba, const char *name);
-int itanium_parse_slot(const char *name,
-		       char *cabinet, 
-		       char *chassis,
-		       char *bay,
-		       char *slot);
 int find_lba_location_info(struct lba_info *lba);
 int pcicmp(char *pciaddr, unsigned short domain, unsigned int bus_id);
 int name_to_pci_id(const char *name, struct pci_id *id);
@@ -393,67 +387,9 @@ int find_interface(const char *ifname, char lspci[13])
 	return -1;
 }
 
-/* 
- * On Itanium systems, slots are found in /sys/bus/pci/slots
- * if the acpiphp or pci_slots driver is loaded.  Slots can be
- * in cabinets, chassis, and bays. The format for the slot
- * entry is:
- *
- *  WXYZZ where:
- *
- * W = cabinet
- * X = bay
- * Y = chassis
- * ZZ = slot number
- *
- * If there only one cabinet, chassis, bay then these fields are
- * should be omitted.  We set them to zero instead as you need per machine
- * info to determine the presence of or absence of them.
- */
-int itanium_parse_slot(const char *name,
-		       char *cabinet, 
-		       char *chassis,
-		       char *bay,
-		       char *slot)
-{
-	strcpy(cabinet, "0");
-	strcpy(bay, "0");
-	strcpy(chassis, "0");
-	strcpy(slot, "0");
-	int len = strlen(name);
-
-	if (len == 5) {
-		cabinet[0] = name[0];
-		name++;
-	}
-	if (len >= 4) {
-		bay[0] = name[0];
-		name++;
-	}
-	if (len >= 3) {
-		chassis[0] =  name[0];
-		name++;
-	}
-	if (len >= 2) {
-		if (name[0] != '0') {
-			strncpy(slot, name, 2);
-			return 0;
-		}
-		name++;
-	}			
-	if (len >= 1) {
-		strncpy(slot, name, 1);
-	}
-
-	return 0;
-}
-
 int find_lba_location_info(struct lba_info *lba)
 {
-	char cabinet_name[ITANIUM_CABINET_NAME_SIZE];
-	char chassis_name[ITANIUM_CHASSIS_NAME_SIZE];
-	char bay_name[ITANIUM_BAY_NAME_SIZE];
-	char slot_name[ITANIUM_SLOT_NAME_SIZE];
+	int slot_num;
 
 	lba->sysfs_root_bridge = get_sysfs_root_bridge(lba->name);
 
@@ -462,17 +398,11 @@ int find_lba_location_info(struct lba_info *lba)
 
 		list_for_each(&lba->sysfs_root_bridge->slots, slot, 
 			      root_bridge_slot_list) {
-			itanium_parse_slot(slot->name,
-					   cabinet_name,
-					   chassis_name,
-					   bay_name,
-					   slot_name);
-			if (lba->cabinet[0] == '\0')
-				lba->cabinet[0] = cabinet_name[0];
-			if (lba->bay[0] == '\0')
-				lba->bay[0] = bay_name[0];
-			if (lba->chassis[0] == '\0')
-				lba->chassis[0] = chassis_name[0];
+			integrity_parse_slot(slot->name,
+					     &lba->arch_info.cabinet,
+					     &lba->arch_info.chassis,
+					     &lba->arch_info.bay,
+					     &slot_num);
 		}
 	}
 	else
@@ -580,17 +510,18 @@ void filter_match_and(struct lba_info *lba)
 		return;
 	} 
 	if ((options.opt_match_cabinet) &&
-	    (strcmp(options.opt_match_cabinet,lba->cabinet) != 0)) {
+	    (integrity_match_cabinet(options.opt_match_cabinet, 
+				     lba->arch_info.cabinet) != 0)) {
 		lba->display = 0;
 		return;
 	}
 	if ((options.opt_match_bay) &&
-	    (strcmp(options.opt_match_bay,lba->bay) != 0)) {
+	    (integrity_match_bay(options.opt_match_bay, lba->arch_info.bay) != 0)) {
 		lba->display = 0;
 		return;
 	}
 	if ((options.opt_match_chassis) &&
-	    (strcmp(options.opt_match_chassis,lba->chassis) != 0)) {
+	    (integrity_match_slot(options.opt_match_chassis, lba->arch_info.chassis) != 0)) {
 		lba->display = 0;
 		return;
 	}
@@ -630,19 +561,21 @@ void filter_match_or(struct lba_info *lba)
 		return;
 	} 
 	if ((options.opt_match_cabinet) &&
-	    (strcmp(options.opt_match_cabinet, lba->cabinet) == 0)) {
+	    (integrity_match_cabinet(options.opt_match_cabinet, 
+				     lba->arch_info.cabinet) == 0)) {
 		lba->display = 1;
 		options.num_lba_display++;
 		return;
 	}
 	if ((options.opt_match_bay) &&
-	    (strcmp(options.opt_match_bay, lba->bay) == 0)) {
+	    (integrity_match_bay(options.opt_match_bay, lba->arch_info.bay) == 0)) {
 		lba->display = 1;
 		options.num_lba_display++;
 		return;
 	}
 	if ((options.opt_match_chassis) &&
-	    (strcmp(options.opt_match_chassis, lba->chassis) == 0)) {
+	    (integrity_match_chassis(options.opt_match_chassis, 
+				     lba->arch_info.chassis) == 0)) {
 		lba->display = 1;
 		options.num_lba_display++;
 		return;
@@ -775,6 +708,7 @@ void show_all_root_info(void)
 {
 	struct lba_info *lba;
 	struct sysfs_slot *slot;
+	char tmp_str[256];
 
 	list_for_each(&host_lba_list, lba, list) {
 		printf("%-14s %s/%s lba id = %#x rev=%s ropes=%d "
@@ -782,9 +716,9 @@ void show_all_root_info(void)
 		       lba->name, lba->bus_type, lba->bus_speed,
 		       lba->id, lba->revision, 
 		       lba->ropes,
-		       (lba->cabinet[0] == '\0') ? "n/a" : lba->cabinet,
-		       (lba->bay[0] == '\0') ? "n/a" : lba->bay,
-		       (lba->chassis[0] == '\0') ? "n/a" : lba->chassis);
+		       integrity_cabinet_to_str(lba->arch_info.cabinet, tmp_str),
+		       integrity_bay_to_str(lba->arch_info.bay, tmp_str),
+		       integrity_chassis_to_str(lba->arch_info.chassis, tmp_str));
 		if (list_empty(&lba->sysfs_root_bridge->slots))
 			printf("n/a");
 		else {

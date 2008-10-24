@@ -27,7 +27,8 @@ SRCS := \
 	list.c \
 	noerr.c \
 	string.c \
-	talloc.c
+	talloc.c \
+	integrity.c
 
 SRCS := $(strip $(SRCS))
 
