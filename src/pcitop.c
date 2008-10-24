@@ -40,7 +40,9 @@
 #include <string.h>
 
 #include "hplba.h"
+#include "pci_sysfs.h"
 #include "pcitop.h"
+#include "util.h"
 #include "string.h"
 #include "list.h"
 
@@ -53,8 +55,7 @@ const char *SLOT_DRIVER_NAMES[] = {
 	NULL
 };
 const char SYSFS_CLASS_DIR[] = "/sys/class";
-const char SYSFS_SLOTS_DIR[] = "/sys/bus/pci/slots";
-const char SYSFS_DEV_DIR[] = "/sys/bus/pci/devices";
+
 
 /* display constants */
 #define COLUMN_SEP_WIDTH     2
@@ -76,7 +77,6 @@ typedef struct {
 
 static pcitop_options_t options;
 static int time_to_quit;
-static char *prg_name;
 static LIST_HEAD(host_lba_list);
 
 struct bus_op_modes bus_op_modes_tab[]= {
@@ -112,11 +112,8 @@ struct util_states util_states_tab[] = {
 	{LBA_UTILSTATE_STOP, "stop"},
 };
 
-void note(char *fmt, ...);
-void error(char *fmt, ...);
-void fatal_error(char *fmt, ...);
 void vbprintf(char *fmt, ...);
-void usage(const char *prg_name);
+void usage(void);
 void mask_signals(void);
 void unmask_signals(void);
 int driver_loaded(const char *name);
@@ -140,53 +137,18 @@ int pcicmp(char *pciaddr, unsigned short domain, unsigned int bus_id);
 int name_to_pci_id(const char *name, struct pci_id *id);
 void filter_match_and(struct lba_info *lba);
 void filter_match_or(struct lba_info *lba);
-int read_attribute(const char *name, char *contents);
 int read_lba_attribute(struct lba_info *lba, const char *attribute,
 		       char *contents);
-int write_attribute(const char *path, const char *contents);
 int write_lba_attribute(struct lba_info *lba, const char *attribute, 
 			const char *contents);
 struct lba_info *init_lba(const char *name);
 void filter_lbas(void);
-int bridge_in_use(struct lba_info *lba);
 int init_lbas(void);
 void show_all_root_info(void);
 char *build_banner(unsigned int num_lbas);
 void measure_utilization(void);
 void sigint_handler(int n);
 void setup_signal(void);
-
-void note(char *fmt, ...) 
-{
-	va_list ap;
-
-	va_start(ap, fmt);
-	vfprintf(stdout, fmt, ap);
-	va_end(ap);
-}
-
-void error(char *fmt, ...) 
-{
-	va_list ap;
-
-	fprintf(stderr, "%s: ", prg_name);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-}
-
-void fatal_error(char *fmt, ...) 
-{
-	va_list ap;
-
-	fprintf(stderr, "%s: ", prg_name);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-
-	exit(1);
-	/* NOT REACHED */
-}
 
 void vbprintf(char *fmt, ...)
 {
@@ -211,9 +173,9 @@ static struct option pcitop_option_list[]={
 	{ 0, 0, 0, 0}
 };
 
-void usage(const char *prg_name)
+void usage(void)
 {
-	printf( "usage: %s [OPTIONS]\n", prg_name);
+	printf( "usage: %s [OPTIONS]\n", program_name());
 	printf( "-h, -?, --help\t\tthis help message\n"
 		"-a\t\t\tlogically 'and' the display filters\n"
 		"-A chassis\t\tdisplay buses in chAssis\n"
@@ -431,25 +393,6 @@ int find_interface(const char *ifname, char lspci[13])
 	return -1;
 }
 
-int add_slot(struct lba_info *lba, const char *name)
-{
-
-	struct slot *new_slot, **tmp_slot;
-	new_slot = calloc(1, sizeof(struct slot));
-	if (!new_slot)
-		fatal_error("cannot allocate memory for slot %s\n", name);
-	new_slot->name = strndup(name, SLOT_NAME_SIZE);
-	for (tmp_slot = &lba->slot;
-	     *tmp_slot; 
-	     tmp_slot = &(*tmp_slot)->next){
-	}
-	*tmp_slot = new_slot;
-
-	return 0;
-}
-
-
-
 /* 
  * On Itanium systems, slots are found in /sys/bus/pci/slots
  * if the acpiphp or pci_slots driver is loaded.  Slots can be
@@ -507,68 +450,35 @@ int itanium_parse_slot(const char *name,
 
 int find_lba_location_info(struct lba_info *lba)
 {
-	int retval = 1;
-	unsigned domain, pci_addr, bus_id;
-	int len;
-	DIR *slots_dir;
-	struct dirent *slots_dp;
-	char address_path[PATH_MAX];
-	char *address;
-	char cabinet[ITANIUM_CABINET_NAME_SIZE];
-	char chassis[ITANIUM_CHASSIS_NAME_SIZE];
-	char bay[ITANIUM_BAY_NAME_SIZE];
-	char slot[ITANIUM_SLOT_NAME_SIZE];
+	char cabinet_name[ITANIUM_CABINET_NAME_SIZE];
+	char chassis_name[ITANIUM_CHASSIS_NAME_SIZE];
+	char bay_name[ITANIUM_BAY_NAME_SIZE];
+	char slot_name[ITANIUM_SLOT_NAME_SIZE];
 
-	/**** TODO -- need match slot to root bridge ****/
-	
-	slots_dir = opendir(SYSFS_SLOTS_DIR);
-	if (!slots_dir) {
-		error("could not open %s\n", SYSFS_SLOTS_DIR);
-		goto out;
-	}
+	lba->sysfs_root_bridge = get_sysfs_root_bridge(lba->name);
 
-	address = calloc(1, getpagesize());
-	if (!address) {
-		error("%s cannot allocate memory\n");
-		goto dir;
-	}
-	while ((slots_dp = readdir(slots_dir)) != NULL) {
-		if (strlen(slots_dp->d_name) == 0 ||
-		    strcmp(slots_dp->d_name,".") == 0 ||
-		    strcmp(slots_dp->d_name,"..") == 0)
-			continue;
-		snprintf(address_path, PATH_MAX, "%s/%s/address", 
-			 SYSFS_SLOTS_DIR, slots_dp->d_name);
-		read_attribute(address_path, address);
-		len = sscanf(address, "%4x:%2x:%2x",
-			     &domain, &bus_id, &pci_addr);
-		if (len != 3) {
-			error("could not parse %s\n", address_path);
-			goto mem;
-		}
-		if ((lba->pci_id.pci_busid == bus_id) &&
-		    (lba->pci_id.pci_domain == domain)) {
-			itanium_parse_slot(slots_dp->d_name,
-					   cabinet,
-					   chassis,
-					   bay,
-					   slot);
+	if (lba->sysfs_root_bridge) {
+		struct sysfs_slot *slot;
+
+		list_for_each(&lba->sysfs_root_bridge->slots, slot, 
+			      root_bridge_slot_list) {
+			itanium_parse_slot(slot->name,
+					   cabinet_name,
+					   chassis_name,
+					   bay_name,
+					   slot_name);
 			if (lba->cabinet[0] == '\0')
-				lba->cabinet[0] = cabinet[0];
+				lba->cabinet[0] = cabinet_name[0];
 			if (lba->bay[0] == '\0')
-				lba->bay[0] = bay[0];
+				lba->bay[0] = bay_name[0];
 			if (lba->chassis[0] == '\0')
-				lba->chassis[0] = chassis[0];
-			add_slot(lba, slot);
+				lba->chassis[0] = chassis_name[0];
 		}
 	}
+	else
+		return 1;
 
-mem:
-	free(address);
-dir:
-	closedir(slots_dir);
-out:
-	return retval;
+	return 0;
 }
 
 int pcicmp(char *pciaddr, unsigned short domain, unsigned int bus_id)
@@ -636,14 +546,18 @@ int name_to_pci_id(const char *name, struct pci_id *id)
 
 int match_slot(struct lba_info *lba, const char *name)
 {
-	struct slot *slot = lba->slot;
+	int found = 0;
+	struct sysfs_slot *slot;
 
-	while (slot) {
-		if (strneq(slot->name, name, ITANIUM_SLOT_NAME_SIZE))
-			return 1;
-		slot = slot->next;
+	list_for_each(&lba->sysfs_root_bridge->slots, slot,
+		      root_bridge_slot_list) {
+		if (strneq(slot->name, name, SLOT_NAME_LEN - 1)) {
+			found = 1;
+			break;
+		}
 	}
-	return 0;
+
+	return found;
 }
 
 void filter_match_and(struct lba_info *lba)
@@ -740,49 +654,6 @@ void filter_match_or(struct lba_info *lba)
 	}
 }
 
-int read_attribute(const char *path, char *contents)
-{
-	static char *buf = 0;
-
-	int fd;
-	int retval = 1;
-	ssize_t amt_read;
-	int page_size = getpagesize();
-	
-	if (!buf) {
-		buf = malloc(page_size);
-		if (!buf) {
-			error("%s cannot allocate memory\n");
-			goto out;
-		}
-	}
-		     
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		error("cannot open %s -- %s\n", path, strerror(errno));
-		goto out;
-	}
-
-	memset(buf, 0, page_size);
-	amt_read = read(fd, buf, page_size);
-	if (amt_read < 0) {
-		error("cannot read attribute %s -- %s\n", path,
-		      strerror(errno));
-		goto fd;
-	}
-	if (strlen(buf) > 0)
-		buf[strlen(buf) - 1] = '\0';
-	strncpy(contents, buf, page_size);
-	retval = 0;
-
-fd:
-	close(fd);
-
-out:
-	return retval;
-}
-
-
 int read_lba_attribute(struct lba_info *lba, const char *attribute, 
 		       char *contents)
 {
@@ -790,35 +661,10 @@ int read_lba_attribute(struct lba_info *lba, const char *attribute,
 	
 	snprintf(path, PATH_MAX, "%s/%s/%s/%s", 
 		 SYSFS_CLASS_DIR, LBA_DRIVER_NAME, lba->name, attribute);
-	return read_attribute(path, contents);
+	return read_attribute(path, contents, PATH_MAX);
 }
 
-int write_attribute(const char *path, const char *contents)
-{
-	int fd;
-	int retval = 1;
-	ssize_t amt_written;
-	
-	fd = open(path, O_WRONLY);
-	if (fd < 0) {
-		error("cannot open %s -- %s\n", path, strerror(errno));
-		goto out;
-	}
 
-	amt_written = write(fd, contents, strlen(contents) + 1);
-	if (amt_written < 0) {
-		error("cannot write attribute %s -- %s\n", path,
-		      strerror(errno));
-		goto fd;
-	}
-	retval = 0;
-
-fd:
-	close(fd);
-
-out:
-	return retval;
-}
 
 int write_lba_attribute(struct lba_info *lba, const char *attribute, 
 			const char *contents)
@@ -828,41 +674,6 @@ int write_lba_attribute(struct lba_info *lba, const char *attribute,
 	snprintf(path, PATH_MAX, "%s/%s/%s/%s", 
 		 SYSFS_CLASS_DIR, LBA_DRIVER_NAME, lba->name, attribute);
 	return write_attribute(path, contents);
-}
-
-int bridge_in_use(struct lba_info *lba)
-{
-	DIR *dev_dir;
-	struct dirent *dev_dp;
-	unsigned int domain, bus_id;
-	int len;
-	int found = 0;
-
-	dev_dir = opendir(SYSFS_DEV_DIR);
-	if (!dev_dir) {
-		error("could not open %s\n", SYSFS_DEV_DIR);
-		goto out;
-	}
-
-	while ((dev_dp = readdir(dev_dir)) != NULL) {
-		if (strlen(dev_dp->d_name) == 0 ||
-		    strcmp(dev_dp->d_name,".") == 0 ||
-		    strcmp(dev_dp->d_name,"..") == 0)
-			continue;
-		len = sscanf(dev_dp->d_name, "%4x:%2x", &domain, &bus_id);
-		if (len != 2) {
-			error("could not parse %s\n", dev_dp->d_name);
-		}
-		if ((lba->pci_id.pci_busid == bus_id) &&
-		    (lba->pci_id.pci_domain == domain)) {
-			found = 1;
-			break;
-		}
-	}
-	closedir(dev_dir);
-
-out:
-	return found;
 }
 
 struct lba_info *init_lba(const char *name)
@@ -889,6 +700,7 @@ struct lba_info *init_lba(const char *name)
 	
 	lba->ops = &hplba_ops;
 	lba->display = 1;
+	lba->in_use = 1;
 
 	attrib = calloc(1, getpagesize());
 	if (!attrib) {
@@ -908,7 +720,6 @@ struct lba_info *init_lba(const char *name)
 	strncpy(lba->revision, attrib, REV_LEN);
 	read_lba_attribute(lba, "ropes", attrib);
 	lba->ropes = atoi(attrib);
-	lba->in_use = bridge_in_use(lba);
 	options.num_lba++;
 
 	
@@ -963,29 +774,27 @@ out:
 void show_all_root_info(void)
 {
 	struct lba_info *lba;
-	struct slot *slot;
+	struct sysfs_slot *slot;
 
 	list_for_each(&host_lba_list, lba, list) {
-		printf("%-14s %s/%s lba id = %#x rev=%s in use=%s ropes=%d "
+		printf("%-14s %s/%s lba id = %#x rev=%s ropes=%d "
 		       "cabinet %s bay %s chassis %s slots ",
 		       lba->name, lba->bus_type, lba->bus_speed,
 		       lba->id, lba->revision, 
-		       (lba->in_use ? "y" : "n"),
 		       lba->ropes,
 		       (lba->cabinet[0] == '\0') ? "n/a" : lba->cabinet,
 		       (lba->bay[0] == '\0') ? "n/a" : lba->bay,
 		       (lba->chassis[0] == '\0') ? "n/a" : lba->chassis);
-		slot = lba->slot;
-		if (slot)
-			do {
-				printf("%s", slot->name);
-				if (slot->next)
-					printf(",");
-				slot = slot->next;
-			} while (slot);
-		else
+		if (list_empty(&lba->sysfs_root_bridge->slots))
 			printf("n/a");
-
+		else {
+			list_for_each(&lba->sysfs_root_bridge->slots, slot,
+				      root_bridge_slot_list) {
+				printf("%s", slot->name);
+				if (!list_is_last(&lba->sysfs_root_bridge->slots, &slot->root_bridge_slot_list))
+					printf(",");
+			}
+		}
 		printf("\n");
 	}
 	printf("Found %lu PCI/PCI-X/PCIe root bridges\n", options.num_lba);
@@ -1049,27 +858,27 @@ char *build_banner(unsigned int num_lbas)
 		"slots");
 	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
-			struct slot *slot = lba->slot;
+			struct sysfs_slot *slot;
 			int cnt = 0, tot_cnt = 0;
-			if (slot) {
-				while (slot) {
+			if (list_empty(&lba->sysfs_root_bridge->slots)) 
+				p += sprintf(p, "%*s", -COLUMN_DATA_WIDTH, "n/a");
+			else {
+				list_for_each(&lba->sysfs_root_bridge->slots, slot,
+					      root_bridge_slot_list) {
 					cnt = sprintf(p, "%s", slot->name);
 					p += cnt;
 					tot_cnt += cnt;
-					if (slot->next) {
+					
+					if (!list_is_last(&lba->sysfs_root_bridge->slots,
+							  &slot->root_bridge_slot_list)) {
 						cnt = sprintf(p, "%s", ", ");
 						p += cnt;
 						tot_cnt += cnt;
 					}
-					slot = slot->next;
 				}
 				p += sprintf(p, "%*s", 
 					     COLUMN_DATA_WIDTH - tot_cnt,
 					     " ");
-			}
-			else {
-				p += sprintf(p, "%*s", 
-					     -COLUMN_DATA_WIDTH, "n/a");
 			}
 			if (list_is_last(&host_lba_list, &lba->list))
 				p += sprintf(p, "%*s", 
@@ -1236,7 +1045,7 @@ int main(int argc, char **argv)
 	int c;
 	char my_lspci[13];
 
-	prg_name = basename(argv[0]);
+	set_program_name(argv[0]);
 
 	options.num_lba = 0;
 	options.num_lba_display = 0;
@@ -1253,60 +1062,61 @@ int main(int argc, char **argv)
 			      "aA:b:B:C:D:hI:oP:S:vdVit:c:?", 
 			      pcitop_option_list, 0)) != -1) {
 		switch(c) {
-			case   0: continue; /* fast path for options */
+		case   0: continue; /* fast path for options */
 
-			case 'A': options.opt_match_chassis = strdup(optarg);
-				  break;
-			case 'a': options.opt_match_and = 1;
-				  options.opt_match_or = 0;
-				  break;
-			case 'v': options.opt_verbose = 1;
-				  break;
-			case 'B': options.opt_match_bay = strdup(optarg);
-				  break;
-			case 'b': options.opt_match_bus = strtol(optarg,NULL,0);
-				  break;
-			case 'C': options.opt_match_cabinet = strdup(optarg);
-				  break;
-			case 'c':
-				  options.nsamples = strtoul(optarg, NULL, 10);
-				  break;
-			case 'D':
-				  options.opt_match_domain = strtol(optarg,NULL,0);
-				  break;
-			case 'd': options.opt_debug = 1;
-				  break;
-			case 'I': if (find_interface(optarg,my_lspci) == 1)
-					options.opt_match_lspci = strdup(my_lspci);;
-				  break;
-			case 'o': options.opt_match_or = 1;
-				  options.opt_match_and = 0;
-				  break;
-			case 'P': options.opt_match_lspci = strdup(optarg);
-				  break;
-			case 'S': options.opt_match_slot = strdup(optarg);
-				  break;
-			case 'h':
-			case '?':
-			case 1: usage(prg_name); 
-				exit(0);
-			case 3:
-			case 't':
-				options.timeout = atoi(optarg);
-				break;
-			case 4:
-			case 'i':
-				options.opt_show_info = 1;
-				break;
-			case 'V': 
-			case   2:
-				printf("%s version " PCITOP_VERSION " Date: "
-				       __DATE__ "\n"
-				       "Copyright (C) 2004-2008 "
-				       "Hewlett-Packard Co.\n", prg_name);
-				exit(0);
-			default:
-				fatal_error("");
+		case 'A': options.opt_match_chassis = strdup(optarg);
+			break;
+		case 'a': options.opt_match_and = 1;
+			options.opt_match_or = 0;
+			break;
+		case 'v': options.opt_verbose = 1;
+			break;
+		case 'B': options.opt_match_bay = strdup(optarg);
+			break;
+		case 'b': options.opt_match_bus = strtol(optarg,NULL,0);
+			break;
+		case 'C': options.opt_match_cabinet = strdup(optarg);
+			break;
+		case 'c':
+			options.nsamples = strtoul(optarg, NULL, 10);
+			break;
+		case 'D':
+			options.opt_match_domain = strtol(optarg,NULL,0);
+			break;
+		case 'd': options.opt_debug = 1;
+			break;
+		case 'I': if (find_interface(optarg,my_lspci) == 1)
+				options.opt_match_lspci = strdup(my_lspci);;
+			break;
+		case 'o': options.opt_match_or = 1;
+			options.opt_match_and = 0;
+			break;
+		case 'P': options.opt_match_lspci = strdup(optarg);
+			break;
+		case 'S': options.opt_match_slot = strdup(optarg);
+			break;
+		case 'h':
+		case '?':
+		case 1:
+			usage(); 
+			exit(0);
+		case 3:
+		case 't':
+			options.timeout = atoi(optarg);
+			break;
+		case 4:
+		case 'i':
+			options.opt_show_info = 1;
+			break;
+		case 'V': 
+		case   2:
+			printf("%s version " PCITOP_VERSION " Date: "
+			       __DATE__ "\n"
+			       "Copyright (C) 2004-2008 "
+			       "Hewlett-Packard Co.\n", program_name());
+			exit(0);
+		default:
+			fatal_error("");
 		}
 	}
 
@@ -1321,6 +1131,8 @@ int main(int argc, char **argv)
 		options.nsamples = 60;
 
 	setup_signal();
+
+	create_sysfs_pci_tree();
 
 	if (init_lbas())
 		exit(1);

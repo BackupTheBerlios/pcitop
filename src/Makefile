@@ -23,6 +23,7 @@ bindir = ${exec_prefix}/bin
 SRCS := \
 	pcitop.c \
 	pci_sysfs.c \
+	util.c \
 	list.c \
 	noerr.c \
 	string.c \

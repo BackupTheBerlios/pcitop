@@ -23,6 +23,7 @@
 #define __PCITOP_H__
 
 #include "list.h"
+#include "pci_sysfs.h"
 
 #define DEFAULT_DEBUG 1
 #ifdef DEFAULT_DEBUG
@@ -83,6 +84,7 @@ struct slot {
 struct lba_info {
 	struct list_node list;
 	const char *	name;
+	struct sysfs_root_bridge *sysfs_root_bridge;
 	const struct lba_ops *ops;
 	unsigned long	prev_timer;	   /* old value */
 	unsigned long	prev_counter;	   /* old value */
@@ -99,7 +101,6 @@ struct lba_info {
 	char cabinet[ITANIUM_CABINET_NAME_SIZE];  /* the id of the cabinet W */
 	char chassis[ITANIUM_CHASSIS_NAME_SIZE];  /* the id of the chassis Y */
 	char bay[ITANIUM_BAY_NAME_SIZE];	  /* the id of the bay X */
-	struct slot *slot;	 /* a linked list of the ids of the slots ZZ */
 };
 
 struct lba_ops {

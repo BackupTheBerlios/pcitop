@@ -22,5 +22,44 @@
 #ifndef __PCI_SYSFS_H__
 #define __PCI_SYSFS_H__
 
+#include "hplba.h"
+#include "list.h"
+
+#define ROOT_BRIDGE_NAME_LEN  8
+#define BUS_NAME_LEN  8
+#define SLOT_NAME_LEN 20
+#define SLOT_ADDRESS_LEN 11
+
+#define SYSFS_SLOTS_DIR "/sys/bus/pci/slots"
+#define SYSFS_DEV_DIR "/sys/devices"
+#define SYSFS_BUS_DIR "/sys/class/pci_bus"
+
+struct sysfs_root_bridge {
+
+	char name[ROOT_BRIDGE_NAME_LEN];
+	struct list_node list; 
+	struct list_head slots;
+};
+
+struct sysfs_slot {
+	char name[SLOT_NAME_LEN];
+	struct list_node list;
+	struct list_node root_bridge_slot_list;
+	char address[SLOT_ADDRESS_LEN];
+	struct sysfs_bus *bus;
+};
+
+struct sysfs_bus {
+	char name[BUS_NAME_LEN];
+	struct list_node list;
+	struct sysfs_root_bridge *root_bridge;
+	
+};
+
+extern int create_sysfs_pci_tree(void);
+extern struct sysfs_root_bridge *get_sysfs_root_bridge(const char *bridge_name);
+
+extern void dump_sysfs_pci_tree(void);
+
 
 #endif /* __PCI_SYSFS_H__ */
