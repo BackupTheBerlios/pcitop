@@ -78,6 +78,7 @@ typedef struct {
 static pcitop_options_t options;
 static int time_to_quit;
 static LIST_HEAD(host_lba_list);
+static struct integrity_sys_info sys_info;
 
 struct bus_op_modes bus_op_modes_tab[]= {
 	{LBA_UNK_TYPE,"unknown"},
@@ -138,7 +139,7 @@ int write_lba_attribute(struct lba_info *lba, const char *attribute,
 struct lba_info *init_lba(const char *name);
 void filter_lbas(void);
 int init_lbas(void);
-void show_all_root_info(void);
+void show_all_root_info(struct integrity_sys_info *sys_info);
 char *build_banner(unsigned int num_lbas);
 void measure_utilization(void);
 void sigint_handler(int n);
@@ -403,6 +404,8 @@ int find_lba_location_info(struct lba_info *lba)
 					     &lba->arch_info.chassis,
 					     &lba->arch_info.bay,
 					     &slot_num);
+			integrity_update_lba_info(&lba->arch_info, slot_num);
+			integrity_update_sys_info(&lba->arch_info, &sys_info);
 		}
 	}
 	else
@@ -478,10 +481,13 @@ int match_slot(struct lba_info *lba, const char *name)
 {
 	int found = 0;
 	struct sysfs_slot *slot;
+	char tmp_str[256];
 
 	list_for_each(&lba->sysfs_root_bridge->slots, slot,
 		      root_bridge_slot_list) {
-		if (strneq(slot->name, name, SLOT_NAME_LEN - 1)) {
+		if (strneq(name, 
+			   integrity_slot_str(slot->name, tmp_str),
+			    SLOT_NAME_LEN - 1)) {
 			found = 1;
 			break;
 		}
@@ -516,12 +522,14 @@ void filter_match_and(struct lba_info *lba)
 		return;
 	}
 	if ((options.opt_match_bay) &&
-	    (integrity_match_bay(options.opt_match_bay, lba->arch_info.bay) != 0)) {
+	    (integrity_match_bay(options.opt_match_bay, 
+				 lba->arch_info.bay) != 0)) {
 		lba->display = 0;
 		return;
 	}
 	if ((options.opt_match_chassis) &&
-	    (integrity_match_slot(options.opt_match_chassis, lba->arch_info.chassis) != 0)) {
+	    (integrity_match_chassis(options.opt_match_chassis,
+				     lba->arch_info.chassis) != 0)) {
 		lba->display = 0;
 		return;
 	}
@@ -568,7 +576,8 @@ void filter_match_or(struct lba_info *lba)
 		return;
 	}
 	if ((options.opt_match_bay) &&
-	    (integrity_match_bay(options.opt_match_bay, lba->arch_info.bay) == 0)) {
+	    (integrity_match_bay(options.opt_match_bay, 
+				 lba->arch_info.bay) == 0)) {
 		lba->display = 1;
 		options.num_lba_display++;
 		return;
@@ -704,34 +713,44 @@ out:
 	return retval;
 }
 
-void show_all_root_info(void)
+void show_all_root_info(struct integrity_sys_info *sys_info)
 {
 	struct lba_info *lba;
 	struct sysfs_slot *slot;
 	char tmp_str[256];
 
 	list_for_each(&host_lba_list, lba, list) {
-		printf("%-14s %s/%s lba id = %#x rev=%s ropes=%d "
-		       "cabinet %s bay %s chassis %s slots ",
-		       lba->name, lba->bus_type, lba->bus_speed,
-		       lba->id, lba->revision, 
-		       lba->ropes,
-		       integrity_cabinet_to_str(lba->arch_info.cabinet, tmp_str),
-		       integrity_bay_to_str(lba->arch_info.bay, tmp_str),
-		       integrity_chassis_to_str(lba->arch_info.chassis, tmp_str));
-		if (list_empty(&lba->sysfs_root_bridge->slots))
-			printf("n/a");
-		else {
+		if (lba->display) {
+		printf("%-14s %s/%s ", lba->name, lba->bus_type, 
+		       lba->bus_speed);
+		if (options.opt_verbose)
+			printf("lba id = %#x rev=%s ", lba->id, lba->revision);
+		printf("ropes=%d ", lba->ropes);
+		if (sys_info->num_cabinets > 1)
+			printf("cabinet %s ",
+			       integrity_cabinet_to_str(lba->arch_info.cabinet, 
+							tmp_str));
+		if (sys_info->num_bays > 1)
+			printf("bay %s ", 
+			       integrity_bay_to_str(lba->arch_info.bay,
+						    tmp_str));
+		if (sys_info->num_chassis > 1)
+			printf("chassis %s ",
+			       integrity_chassis_to_str(lba->arch_info.chassis,
+							tmp_str));
+		if (!list_empty(&lba->sysfs_root_bridge->slots)) {
+			printf("slots ");
 			list_for_each(&lba->sysfs_root_bridge->slots, slot,
 				      root_bridge_slot_list) {
-				printf("%s", slot->name);
+				printf("%s", integrity_slot_str(slot->name,
+								tmp_str));
 				if (!list_is_last(&lba->sysfs_root_bridge->slots, &slot->root_bridge_slot_list))
 					printf(",");
 			}
 		}
 		printf("\n");
+		}
 	}
-	printf("Found %lu PCI/PCI-X/PCIe root bridges\n", options.num_lba);
 }
 
 char *build_banner(unsigned int num_lbas)
@@ -740,6 +759,7 @@ char *build_banner(unsigned int num_lbas)
 	unsigned int i;
 	int col_width; 
 	char *banner, *p;
+	char tmp_str[256];
 
 	/*
 	 * Add space for a '\n' at the end of each row and a '\0' string
@@ -799,7 +819,8 @@ char *build_banner(unsigned int num_lbas)
 			else {
 				list_for_each(&lba->sysfs_root_bridge->slots, slot,
 					      root_bridge_slot_list) {
-					cnt = sprintf(p, "%s", slot->name);
+					cnt = sprintf(p, "%s", 
+						      integrity_slot_str(slot->name, tmp_str));
 					p += cnt;
 					tot_cnt += cnt;
 					
@@ -1066,24 +1087,25 @@ int main(int argc, char **argv)
 
 	setup_signal();
 
+	integrity_init_sys_info(&sys_info);
 	create_sysfs_pci_tree();
 
 	if (init_lbas())
 		exit(1);
 
-	if (options.timeout == 0) 
-		options.timeout = 1;
+	filter_lbas();
 
 	if (options.opt_show_info) {
-		show_all_root_info();
+		show_all_root_info(&sys_info);
 		return 0;
 	}
-
-	filter_lbas();
 
 	if (options.num_lba == 0)
 		fatal_error("this machine does not have suitable I/O "
 			    "controllers\n");
+
+	if (options.timeout == 0) 
+		options.timeout = 1;
 
 	if (options.num_lba_display == 0)
 		fatal_error("no I/O controllers matched filter\n");

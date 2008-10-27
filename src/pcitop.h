@@ -90,7 +90,7 @@ struct lba_info {
 	struct pci_id pci_id;		   /* domain, bus, addr, func */
 	unsigned int in_use;		   /* any devices behind lba */
 	unsigned int display;		   /* do we want to see it or not */
-	struct integrity_lba_info arch_info;     /* specific to architecture */
+	struct integrity_lba_info arch_info; /* specific to architecture */
 };
 
 struct lba_ops {
