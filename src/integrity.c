@@ -146,7 +146,7 @@ int integrity_parse_slot(const char *slot_name,
 	}
 	if (len >= 2) {
 		if (slot_name[0] != '0') {
-			sscanf("%02u", slot_name, slot);
+			sscanf(slot_name, "%d", slot);
 			return 0;
 		}
 		slot_name++;

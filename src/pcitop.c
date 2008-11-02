@@ -961,7 +961,7 @@ void measure_utilization(void)
 		       options.nsamples - nsamples);
 	puts(banner);
 	p = line_results;
-	p += sprintf(p, "%*s", -COLUMN_HEADER_WIDTH, " ");
+	p += sprintf(p, "%*s", -(COLUMN_HEADER_WIDTH  + COLUMN_SEP_WIDTH), " ");
 	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			if (lba->in_use)
@@ -969,7 +969,7 @@ void measure_utilization(void)
 			else
 				util = 0.0;
 			col_width = COLUMN_DATA_WIDTH;
-			if (list_is_last(&host_lba_list, &lba->list))
+			if (!list_is_last(&host_lba_list, &lba->list))
 				col_width += COLUMN_SEP_WIDTH;
 			p += sprintf(p, "%06.2f%%%*s", 
 				     util, col_width - 7, " ");
