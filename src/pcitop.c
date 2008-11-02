@@ -46,7 +46,7 @@
 #include "string.h"
 #include "list.h"
 
-#define PCITOP_VERSION "1.0.0"
+#define PCITOP_VERSION "1.0.1"
 
 const char LBA_DRIVER_NAME[] = "hplba";
 const char *SLOT_DRIVER_NAMES[] = {

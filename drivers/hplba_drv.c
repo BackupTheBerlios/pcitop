@@ -92,7 +92,7 @@ struct lba_info lba_info_tab[] = {
 /*
  * Version Information
  */
-#define DRIVER_VERSION "v0.1"
+#define DRIVER_VERSION "v1.0.1"
 #define DRIVER_AUTHOR "Andrew Patterson <andrew.patterson@hp.com>"
 #define DRIVER_DESC "Hewlett-Packard IPF Local Bus Adapter driver"
 MODULE_AUTHOR(DRIVER_AUTHOR);
