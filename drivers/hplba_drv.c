@@ -215,7 +215,12 @@ static acpi_status __init lba_probe(acpi_handle handle, u32 depth,
 	struct acpi_device *acpi_dev;
 	struct acpi_pci_id pci_id;
 	void *io_addr;
-	u64 base_addr, length, value;
+	u64 base_addr, length;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,27))
+	unsigned long value;
+#else
+	unsigned long long value;
+#endif
 	
 	status = hp_acpi_csr_space(handle, &base_addr, &length);
 	if (ACPI_FAILURE(status)) 

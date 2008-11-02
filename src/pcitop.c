@@ -780,7 +780,7 @@ char *build_banner(unsigned int num_lbas)
 	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
-			if (list_is_last(&host_lba_list, &lba->list))
+			if (!list_is_last(&host_lba_list, &lba->list))
 				col_width += COLUMN_SEP_WIDTH;
 			p += sprintf(p, "%*s", -col_width, lba->name);
 		}
@@ -791,7 +791,7 @@ char *build_banner(unsigned int num_lbas)
 	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
-			if (list_is_last(&host_lba_list, &lba->list))
+			if (!list_is_last(&host_lba_list, &lba->list))
 				col_width += COLUMN_SEP_WIDTH;
 			p += sprintf(p, "%*s", -col_width, lba->bus_type);
 		}
@@ -802,7 +802,7 @@ char *build_banner(unsigned int num_lbas)
 	list_for_each(&host_lba_list, lba, list) {
 		if (lba->display) {
 			col_width = COLUMN_DATA_WIDTH;
-			if (list_is_last(&host_lba_list, &lba->list))
+			if (!list_is_last(&host_lba_list, &lba->list))
 				col_width += COLUMN_SEP_WIDTH;
 			p += sprintf(p, "%*s", -col_width, lba->bus_speed);
 		}
@@ -835,7 +835,7 @@ char *build_banner(unsigned int num_lbas)
 					     COLUMN_DATA_WIDTH - tot_cnt,
 					     " ");
 			}
-			if (list_is_last(&host_lba_list, &lba->list))
+			if (!list_is_last(&host_lba_list, &lba->list))
 				p += sprintf(p, "%*s", 
 					     COLUMN_SEP_WIDTH, " ");
 		}
@@ -848,7 +848,7 @@ char *build_banner(unsigned int num_lbas)
 			p += sprintf(p, "%*d", 
 				     -COLUMN_DATA_WIDTH,
 				     lba->ropes);
-			if (list_is_last(&host_lba_list, &lba->list))
+			if (!list_is_last(&host_lba_list, &lba->list))
 				p += sprintf(p, "%*s", COLUMN_SEP_WIDTH, " ");
 		}
 	}
@@ -944,7 +944,7 @@ void measure_utilization(void)
 				lba->prev_timer = timer;
 				lba->prev_counter = counter;
 				col_width = COLUMN_DATA_WIDTH;
-				if (list_is_last(&host_lba_list, &lba->list))
+				if (!list_is_last(&host_lba_list, &lba->list))
 					col_width += COLUMN_SEP_WIDTH;
 				p += sprintf(p, "%06.2f%%%*s", 
 					     util, col_width - 7, " ");
